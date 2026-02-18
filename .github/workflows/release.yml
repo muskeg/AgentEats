@@ -24,7 +24,6 @@ jobs:
   build-release:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
