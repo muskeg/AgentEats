@@ -1,0 +1,13 @@
+.git
+.github
+*.db
+*.sqlite
+*.sqlite3
+agenteats-api
+agenteats-mcp
+agenteats-seed
+README.md
+CHANGELOG.md
+LICENSE
+.env
+.env.*

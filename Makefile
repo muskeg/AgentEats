@@ -1,4 +1,4 @@
-.PHONY: build seed api mcp clean test
+.PHONY: build seed api mcp mcp-sse clean test docker docker-run deps release
 
 # Build all binaries
 build:
@@ -18,6 +18,10 @@ api:
 mcp:
 	go run ./cmd/mcp
 
+# Start the MCP server (SSE on port 8001)
+mcp-sse:
+	MCP_TRANSPORT=sse MCP_PORT=8001 go run ./cmd/mcp
+
 # Run tests
 test:
 	go test ./... -v
@@ -35,3 +39,11 @@ release:
 	CGO_ENABLED=1 go build -ldflags="-s -w" -o agenteats-api ./cmd/api
 	CGO_ENABLED=1 go build -ldflags="-s -w" -o agenteats-mcp ./cmd/mcp
 	CGO_ENABLED=1 go build -ldflags="-s -w" -o agenteats-seed ./cmd/seed
+
+# Build Docker image
+docker:
+	docker build -t agenteats .
+
+# Run with Docker
+docker-run:
+	docker run --rm -p 8000:8000 agenteats

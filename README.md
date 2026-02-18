@@ -21,13 +21,27 @@ go run ./cmd/mcp
 ### Build binaries
 
 ```bash
+make build    # or:
 go build -o agenteats-api ./cmd/api
 go build -o agenteats-mcp ./cmd/mcp
 go build -o agenteats-seed ./cmd/seed
 ```
 
-### MCP Client Configuration (Claude Desktop, etc.)
+### Docker
 
+```bash
+docker build -t agenteats .
+docker run --rm -p 8000:8000 agenteats
+
+# With Postgres
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL="postgres://user:pass@host:5432/agenteats" \
+  agenteats
+```
+
+### MCP Client Configuration
+
+**Stdio** (Claude Desktop, local agents):
 ```json
 {
   "mcpServers": {
@@ -36,6 +50,13 @@ go build -o agenteats-seed ./cmd/seed
     }
   }
 }
+```
+
+**SSE** (remote agents over HTTP):
+```bash
+# Start MCP server with SSE transport
+MCP_TRANSPORT=sse MCP_PORT=8001 ./agenteats-mcp
+# Agents connect to http://host:8001/sse
 ```
 
 ## Architecture
@@ -47,7 +68,7 @@ go build -o agenteats-seed ./cmd/seed
 └──────────┬──────────────────┬────────────────────┘
            │                  │
      MCP Protocol        REST API
-      (stdio)          (HTTP/JSON)
+    (stdio / SSE)      (HTTP/JSON)
            │                  │
 ┌──────────▼──────────────────▼────────────────────┐
 │              AgentEats Service (Go)               │
@@ -62,7 +83,7 @@ go build -o agenteats-seed ./cmd/seed
 │  └─────────────────┬───────────────────────────┘  │
 │                    │                              │
 │  ┌─────────────────▼───────────────────────────┐  │
-│  │          GORM + SQLite                      │  │
+│  │       GORM (SQLite / PostgreSQL)            │  │
 │  └─────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────┘
 ```
@@ -73,7 +94,7 @@ go build -o agenteats-seed ./cmd/seed
 |-----------|--------|-----|
 | Language | Go 1.23+ | 200-500K req/s, tiny memory, single binary |
 | Router | chi | Lightweight, stdlib-compatible, great middleware |
-| ORM | GORM + SQLite | Zero-config, portable, upgradeable to Postgres |
+| ORM | GORM | SQLite (dev) or PostgreSQL (prod), auto-detected |
 | MCP | mcp-go | Most popular Go MCP SDK |
 | Config | envconfig | Env-var driven, zero boilerplate |
 
@@ -120,9 +141,11 @@ Environment variables (or `.env` file):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `agenteats.db` | SQLite database file path |
-| `HOST` | `0.0.0.0` | API server host |
-| `PORT` | `8000` | API server port |
+| `DATABASE_URL` | `agenteats.db` | SQLite file path, or `postgres://...` for Postgres |
+| `HOST` | `0.0.0.0` | Server bind address |
+| `PORT` | `8000` | REST API server port |
+| `MCP_TRANSPORT` | `stdio` | MCP transport: `stdio` or `sse` |
+| `MCP_PORT` | `8001` | MCP SSE server port (when `MCP_TRANSPORT=sse`) |
 | `DEBUG` | `false` | Enable debug logging |
 
 ## Project Structure
@@ -130,16 +153,20 @@ Environment variables (or `.env` file):
 ```
 ├── cmd/
 │   ├── api/main.go          # REST API server
-│   ├── mcp/main.go          # MCP server (stdio)
+│   ├── mcp/main.go          # MCP server (stdio + SSE)
 │   └── seed/main.go         # Database seeder
 ├── internal/
 │   ├── config/config.go     # Environment configuration
-│   ├── database/db.go       # GORM database init
+│   ├── database/db.go       # GORM database init (SQLite/Postgres)
 │   ├── dto/dto.go           # Request/response schemas
 │   ├── handlers/handlers.go # HTTP route handlers
 │   ├── mcpserver/server.go  # MCP tool definitions
 │   ├── models/models.go     # Database models
 │   └── services/services.go # Business logic
+├── .github/workflows/
+│   ├── ci.yml               # Build & test on push/PR
+│   └── release.yml          # release-please + cross-platform binaries
+├── Dockerfile               # Multi-stage production build
 ├── go.mod
 ├── go.sum
 └── README.md

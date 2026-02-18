@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -16,8 +17,18 @@ func main() {
 
 	s := mcpserver.NewServer()
 
-	log.Println("🤖 AgentEats MCP server starting (stdio transport)")
-	if err := server.ServeStdio(s); err != nil {
-		log.Fatalf("MCP server error: %v", err)
+	switch cfg.MCPTransport {
+	case "sse":
+		addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.MCPPort)
+		sseServer := server.NewSSEServer(s, server.WithBaseURL(fmt.Sprintf("http://%s", addr)))
+		log.Printf("🤖 AgentEats MCP server starting (SSE transport on %s)", addr)
+		if err := sseServer.Start(addr); err != nil {
+			log.Fatalf("MCP SSE server error: %v", err)
+		}
+	default:
+		log.Println("🤖 AgentEats MCP server starting (stdio transport)")
+		if err := server.ServeStdio(s); err != nil {
+			log.Fatalf("MCP server error: %v", err)
+		}
 	}
 }
