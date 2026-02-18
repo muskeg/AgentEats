@@ -2,13 +2,15 @@
 
 AI-agent-first restaurant directory, built in Go for maximum performance and minimal infrastructure cost. Structured data served via REST API and MCP (Model Context Protocol) so that LLM-powered agents can search restaurants, browse menus, get recommendations, and make reservations.
 
+**Live demo:** [agenteats.fly.dev](https://agenteats.fly.dev/health)
+
 ## Quick Start
 
 ```bash
 # Install dependencies
 go mod tidy
 
-# Seed demo data (8 restaurants, 130+ menu items)
+# Seed demo data (8 restaurants, ~100 menu items)
 go run ./cmd/seed
 
 # Start the REST API (http://localhost:8000)
@@ -18,13 +20,12 @@ go run ./cmd/api
 go run ./cmd/mcp
 ```
 
-### Build binaries
+### Build
 
 ```bash
-make build    # or:
-go build -o agenteats-api ./cmd/api
-go build -o agenteats-mcp ./cmd/mcp
-go build -o agenteats-seed ./cmd/seed
+make build         # Build all binaries
+make test          # Run tests
+make release       # Optimized release binaries
 ```
 
 ### Docker
@@ -54,38 +55,22 @@ docker run --rm -p 8000:8000 \
 
 **SSE** (remote agents over HTTP):
 ```bash
-# Start MCP server with SSE transport
 MCP_TRANSPORT=sse MCP_PORT=8001 ./agenteats-mcp
 # Agents connect to http://host:8001/sse
 ```
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│                  AI Agents                       │
-│  (Claude, GPT, custom agents, chat interfaces)  │
-└──────────┬──────────────────┬────────────────────┘
-           │                  │
-     MCP Protocol        REST API
-    (stdio / SSE)      (HTTP/JSON)
-           │                  │
-┌──────────▼──────────────────▼────────────────────┐
-│              AgentEats Service (Go)               │
-│  ┌────────────┐  ┌───────────┐                    │
-│  │ MCP Server │  │ chi       │                    │
-│  │ (mcp-go)   │  │ (router)  │                    │
-│  └─────┬──────┘  └─────┬─────┘                    │
-│        │               │                          │
-│  ┌─────▼───────────────▼──────────────────────┐   │
-│  │          Service Layer                      │  │
-│  │  search · recommend · reserve · manage      │  │
-│  └─────────────────┬───────────────────────────┘  │
-│                    │                              │
-│  ┌─────────────────▼───────────────────────────┐  │
-│  │       GORM (SQLite / PostgreSQL)            │  │
-│  └─────────────────────────────────────────────┘  │
-└───────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["AI Agents<br/>(Claude, GPT, custom agents)"] -->|"MCP Protocol<br/>(stdio / SSE)"| MCP["MCP Server<br/>mcp-go"]
+    A -->|"REST API<br/>(HTTP/JSON)"| API["HTTP Router<br/>chi"]
+
+    subgraph AgentEats Service
+        MCP --> SVC["Service Layer<br/>search · recommend · reserve · manage"]
+        API --> SVC
+        SVC --> DB["GORM<br/>SQLite / PostgreSQL"]
+    end
 ```
 
 ## Tech Stack
@@ -93,18 +78,21 @@ MCP_TRANSPORT=sse MCP_PORT=8001 ./agenteats-mcp
 | Component | Choice | Why |
 |-----------|--------|-----|
 | Language | Go 1.23+ | 200-500K req/s, tiny memory, single binary |
-| Router | chi | Lightweight, stdlib-compatible, great middleware |
-| ORM | GORM | SQLite (dev) or PostgreSQL (prod), auto-detected |
-| MCP | mcp-go | Most popular Go MCP SDK |
-| Config | envconfig | Env-var driven, zero boilerplate |
+| Router | [chi](https://github.com/go-chi/chi) | Lightweight, stdlib-compatible, great middleware |
+| ORM | [GORM](https://gorm.io) | SQLite (dev) or PostgreSQL (prod), auto-detected from `DATABASE_URL` |
+| MCP | [mcp-go](https://github.com/mark3labs/mcp-go) | Go MCP SDK — stdio + SSE transports |
+| Config | [envconfig](https://github.com/kelseyhightower/envconfig) | Env-var driven, zero boilerplate |
+| Hosting | [Fly.io](https://fly.io) | Scale-to-zero, global edge, ~$0/mo idle |
+| Database | [Neon](https://neon.tech) | Serverless Postgres, free tier, auto-suspend |
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/health` | Service health check |
 | `GET` | `/restaurants` | Search & filter restaurants |
 | `GET` | `/restaurants/{id}` | Full restaurant details |
-| `POST` | `/restaurants` | Register a restaurant (owner) |
+| `POST` | `/restaurants` | Register a restaurant |
 | `PUT` | `/restaurants/{id}` | Update restaurant info |
 | `GET` | `/restaurants/{id}/menu` | Get structured menu |
 | `POST` | `/restaurants/{id}/menu/items` | Add a menu item |
@@ -113,27 +101,82 @@ MCP_TRANSPORT=sse MCP_PORT=8001 ./agenteats-mcp
 | `GET` | `/restaurants/{id}/reservations` | List reservations |
 | `DELETE` | `/reservations/{id}` | Cancel a reservation |
 | `GET` | `/recommendations` | AI-friendly recommendations |
-| `GET` | `/health` | Service health check |
 
-## MCP Tools (for AI agents)
+**Query parameters** for `GET /restaurants`:
+
+| Param | Example | Description |
+|-------|---------|-------------|
+| `query` | `sushi` | Free-text search (name, description, cuisines) |
+| `cuisine` | `Italian` | Filter by cuisine type |
+| `city` | `New York` | Filter by city |
+| `price_range` | `$$$` | Filter by price level (`$` to `$$$$`) |
+| `features` | `outdoor_seating,wifi` | Comma-separated feature filters |
+
+**Query parameters** for `GET /recommendations`:
+
+| Param | Example | Description |
+|-------|---------|-------------|
+| `cuisine` | `Japanese` | Preferred cuisine |
+| `city` | `New York` | City to search in |
+| `price_range` | `$$` | Budget level |
+| `features` | `delivery` | Desired features |
+| `dietary_needs` | `vegan,gluten_free` | Dietary requirements |
+| `occasion` | `date_night` | Type of occasion |
+
+## MCP Tools
 
 | Tool | Description |
 |------|-------------|
 | `search_restaurants` | Find restaurants by cuisine, price, location, dietary needs |
 | `get_restaurant_details` | Full info including hours, contact, description |
 | `get_menu` | Structured menu with prices, dietary labels, descriptions |
-| `get_recommendations` | Personalized restaurant suggestions |
+| `get_recommendations` | Personalized restaurant suggestions with match scoring |
+| `check_availability` | Check available reservation time slots |
 | `make_reservation` | Book a table (date, time, party size) |
-| `check_availability` | Check reservation availability |
 | `cancel_reservation` | Cancel an existing reservation |
+
+**Resource:** `agenteats://info` — service metadata and capabilities summary.
 
 ## Data Model
 
-Restaurants expose rich structured data optimized for AI consumption:
+```mermaid
+erDiagram
+    Restaurant ||--o{ OperatingHours : has
+    Restaurant ||--o{ MenuItem : offers
+    Restaurant ||--o{ Reservation : accepts
 
-- **Restaurant**: name, cuisines, price range ($–$$$$), location, hours, contact, features
-- **Menu Items**: name, description, price, category, dietary labels (vegan, gluten-free, etc.)
-- **Reservations**: date, time, party size, status, special requests
+    Restaurant {
+        string id PK
+        string name
+        string cuisine_types
+        string price_range
+        string city
+        float rating
+        int review_count
+        string features
+    }
+
+    MenuItem {
+        string id PK
+        string restaurant_id FK
+        string name
+        string category
+        float price
+        string dietary_labels
+        bool is_popular
+        int calories
+    }
+
+    Reservation {
+        string id PK
+        string restaurant_id FK
+        string customer_name
+        string date
+        string time
+        int party_size
+        string status
+    }
+```
 
 ## Configuration
 
@@ -146,30 +189,54 @@ Environment variables (or `.env` file):
 | `PORT` | `8000` | REST API server port |
 | `MCP_TRANSPORT` | `stdio` | MCP transport: `stdio` or `sse` |
 | `MCP_PORT` | `8001` | MCP SSE server port (when `MCP_TRANSPORT=sse`) |
-| `DEBUG` | `false` | Enable debug logging |
+| `DEBUG` | `false` | Enable verbose query logging |
+
+## Deployment
+
+The app runs on [Fly.io](https://fly.io) with [Neon](https://neon.tech) serverless Postgres:
+
+```bash
+# First-time setup
+fly launch --no-deploy
+fly secrets set DATABASE_URL="postgres://..."
+fly deploy
+
+# Seed production database
+fly ssh console -C "agenteats-seed"
+```
+
+CI/CD is handled by GitHub Actions:
+
+| Workflow | Trigger | What it does |
+|----------|---------|-------------|
+| `ci.yml` | Push / PR to `main` | Build, vet, test with race detector |
+| `deploy.yml` | Push to `main` | Build + test gate, then deploy to Fly.io |
+| `release.yml` | Push to `main` | release-please PR, cross-platform binaries on release |
 
 ## Project Structure
 
 ```
 ├── cmd/
-│   ├── api/main.go          # REST API server
-│   ├── mcp/main.go          # MCP server (stdio + SSE)
-│   └── seed/main.go         # Database seeder
+│   ├── api/main.go              # REST API server
+│   ├── mcp/main.go              # MCP server (stdio + SSE)
+│   └── seed/main.go             # Database seeder
 ├── internal/
-│   ├── config/config.go     # Environment configuration
-│   ├── database/db.go       # GORM database init (SQLite/Postgres)
-│   ├── dto/dto.go           # Request/response schemas
-│   ├── handlers/handlers.go # HTTP route handlers
-│   ├── mcpserver/server.go  # MCP tool definitions
-│   ├── models/models.go     # Database models
-│   └── services/services.go # Business logic
+│   ├── config/config.go         # Environment configuration
+│   ├── database/db.go           # GORM init (SQLite / Postgres auto-detect)
+│   ├── dto/dto.go               # Request/response DTOs
+│   ├── handlers/handlers.go     # HTTP route handlers
+│   ├── mcpserver/server.go      # MCP tool & resource definitions
+│   ├── models/models.go         # Database models (Restaurant, MenuItem, etc.)
+│   └── services/services.go     # Business logic
 ├── .github/workflows/
-│   ├── ci.yml               # Build & test on push/PR
-│   └── release.yml          # release-please + cross-platform binaries
-├── Dockerfile               # Multi-stage production build
-├── go.mod
-├── go.sum
-└── README.md
+│   ├── ci.yml                   # Build & test
+│   ├── deploy.yml               # CD to Fly.io
+│   └── release.yml              # release-please + binary releases
+├── Dockerfile                   # Multi-stage production build
+├── fly.toml                     # Fly.io app configuration
+├── release-please-config.json   # Release automation config
+├── Makefile                     # Build, test, run shortcuts
+└── go.mod
 ```
 
 ## License
