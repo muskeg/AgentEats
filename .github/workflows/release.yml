@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-release:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            cc: gcc
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            cc: aarch64-linux-gnu-gcc
+          - os: macos-13
+            goos: darwin
+            goarch: amd64
+            cc: clang
+          - os: macos-14
+            goos: darwin
+            goarch: arm64
+            cc: clang
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install cross-compiler (linux/arm64)
+        if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build release binaries
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "1"
+          CC: ${{ matrix.cc }}
+        run: |
+          VERSION="${{ needs.release-please.outputs.version }}"
+          SUFFIX="${{ matrix.goos }}-${{ matrix.goarch }}"
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+          go build -ldflags="${LDFLAGS}" -o "agenteats-api-${SUFFIX}" ./cmd/api
+          go build -ldflags="${LDFLAGS}" -o "agenteats-mcp-${SUFFIX}" ./cmd/mcp
+          go build -ldflags="${LDFLAGS}" -o "agenteats-seed-${SUFFIX}" ./cmd/seed
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SUFFIX="${{ matrix.goos }}-${{ matrix.goarch }}"
+          gh release upload ${{ needs.release-please.outputs.tag_name }} \
+            agenteats-api-${SUFFIX} \
+            agenteats-mcp-${SUFFIX} \
+            agenteats-seed-${SUFFIX}

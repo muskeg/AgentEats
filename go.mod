@@ -1,0 +1,21 @@
+module github.com/agenteats/agenteats
+
+go 1.23.0
+
+require (
+	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/cors v1.2.1
+	github.com/google/uuid v1.6.0
+	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/mark3labs/mcp-go v0.20.1
+	gorm.io/driver/sqlite v1.5.7
+	gorm.io/gorm v1.25.12
+)
+
+require (
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/mattn/go-sqlite3 v1.14.24 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
+	golang.org/x/text v0.21.0 // indirect
+)

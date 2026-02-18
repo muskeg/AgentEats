@@ -1,0 +1,54 @@
+# Go binaries & build output
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/api
+/mcp
+/seed
+/agenteats-api
+/agenteats-mcp
+/agenteats-seed
+/bin/
+/dist/
+
+# Go workspace & tooling
+vendor/
+*.test
+*.prof
+*.cpu
+*.mem
+cover.html
+coverage.out
+*.out
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE & editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+\#*\#
+.#*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Misc
+*.log
+tmp/
+.cache/
