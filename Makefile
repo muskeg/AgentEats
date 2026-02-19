@@ -1,4 +1,4 @@
-.PHONY: build seed api mcp mcp-sse clean test docker docker-run deps release
+.PHONY: build seed api mcp mcp-http clean test docker docker-run deps release
 
 # Build all binaries
 build:
@@ -18,9 +18,9 @@ api:
 mcp:
 	go run ./cmd/mcp
 
-# Start the MCP server (SSE on port 8001)
-mcp-sse:
-	MCP_TRANSPORT=sse MCP_PORT=8001 go run ./cmd/mcp
+# Start the MCP server (Streamable HTTP on port 8001)
+mcp-http:
+	MCP_TRANSPORT=http MCP_PORT=8001 go run ./cmd/mcp
 
 # Run tests
 test:
