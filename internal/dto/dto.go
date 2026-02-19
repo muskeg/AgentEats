@@ -158,3 +158,43 @@ type HealthOut struct {
 type ErrorOut struct {
 	Error string `json:"error"`
 }
+
+// --- Owner DTOs ---
+
+// RegisterOwnerIn is the payload for owner registration.
+type RegisterOwnerIn struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// RegisterOwnerOut is the response after registration.
+// The API key is only returned once — store it securely.
+type RegisterOwnerOut struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	APIKey string `json:"api_key"` // only returned on creation
+}
+
+// OwnerOut is a safe owner representation (no API key).
+type OwnerOut struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// --- Bulk Import DTOs ---
+
+// BulkMenuImportIn is the payload for bulk menu import.
+type BulkMenuImportIn struct {
+	// Strategy: "replace" deletes all existing items first; "merge" adds/updates.
+	Strategy string       `json:"strategy"` // "replace" (default) or "merge"
+	Items    []MenuItemIn `json:"items"`
+}
+
+// BulkMenuImportOut is the response after a bulk import.
+type BulkMenuImportOut struct {
+	RestaurantID string `json:"restaurant_id"`
+	Imported     int    `json:"imported"`
+	Strategy     string `json:"strategy"`
+}

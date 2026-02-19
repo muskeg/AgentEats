@@ -12,7 +12,7 @@ type Config struct {
 	Port         int    `envconfig:"PORT" default:"8000"`
 	DatabaseURL  string `envconfig:"DATABASE_URL" default:"agenteats.db"`
 	Debug        bool   `envconfig:"DEBUG" default:"false"`
-	MCPTransport string `envconfig:"MCP_TRANSPORT" default:"stdio"` // "stdio" or "sse"
+	MCPTransport string `envconfig:"MCP_TRANSPORT" default:"stdio"` // "stdio" or "http"
 	MCPPort      int    `envconfig:"MCP_PORT" default:"8001"`
 }
 

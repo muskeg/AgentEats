@@ -46,6 +46,7 @@ func Init(cfg *config.Config) {
 
 	// Auto-migrate all models
 	if err := DB.AutoMigrate(
+		&models.Owner{},
 		&models.Restaurant{},
 		&models.OperatingHours{},
 		&models.MenuItem{},

@@ -1,6 +1,9 @@
 package models
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,9 +31,23 @@ const (
 
 // --- Models ---
 
+// Owner represents a restaurant owner with API key authentication.
+type Owner struct {
+	ID           string    `gorm:"primaryKey;size:36" json:"id"`
+	Name         string    `gorm:"size:200;not null" json:"name"`
+	Email        string    `gorm:"size:200;not null;uniqueIndex" json:"email"`
+	APIKeyHash   string    `gorm:"size:64;not null;uniqueIndex" json:"-"`
+	IsActive     bool      `gorm:"not null;default:true" json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+
+	Restaurants []Restaurant `gorm:"foreignKey:OwnerID;constraint:OnDelete:CASCADE" json:"restaurants,omitempty"`
+}
+
 // Restaurant represents a restaurant listing.
 type Restaurant struct {
 	ID          string     `gorm:"primaryKey;size:36" json:"id"`
+	OwnerID     string     `gorm:"size:36;index" json:"owner_id,omitempty"`
 	Name        string     `gorm:"size:200;not null;index" json:"name"`
 	Description string     `gorm:"type:text" json:"description,omitempty"`
 	Cuisines    string     `gorm:"size:500" json:"cuisines"` // comma-separated
@@ -102,4 +119,22 @@ type Reservation struct {
 // NewID generates a new UUID string.
 func NewID() string {
 	return uuid.New().String()
+}
+
+// GenerateAPIKey creates a cryptographically random API key.
+// Returns the raw key (to display once to the owner) and the hashed version (to store).
+func GenerateAPIKey() (raw string, hash string) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto/rand failed: " + err.Error())
+	}
+	raw = "ae_" + hex.EncodeToString(b) // ae_ prefix for easy identification
+	hash = HashAPIKey(raw)
+	return
+}
+
+// HashAPIKey returns the SHA-256 hex digest of an API key.
+func HashAPIKey(key string) string {
+	h := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(h[:])
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/agenteats/agenteats/internal/database"
 	"github.com/agenteats/agenteats/internal/dto"
+	authmw "github.com/agenteats/agenteats/internal/middleware"
 	"github.com/agenteats/agenteats/internal/services"
 )
 
@@ -208,4 +209,135 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 
 	results := services.GetRecommendations(database.DB, cuisine, city, priceRange, features, dietaryNeeds, occasion, limit)
 	writeJSON(w, http.StatusOK, results)
+}
+
+// --- Owner Registration ---
+
+func RegisterOwner(w http.ResponseWriter, r *http.Request) {
+	var in dto.RegisterOwnerIn
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if in.Name == "" || in.Email == "" {
+		writeError(w, http.StatusBadRequest, "name and email are required")
+		return
+	}
+	result, err := services.RegisterOwner(database.DB, in)
+	if err != nil {
+		writeError(w, http.StatusConflict, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, result)
+}
+
+func RotateKey(w http.ResponseWriter, r *http.Request) {
+	owner := authmw.OwnerFromContext(r.Context())
+	if owner == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	newKey, err := services.RotateAPIKey(database.DB, owner.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to rotate key")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"api_key": newKey})
+}
+
+// --- Authenticated Restaurant Management ---
+
+func CreateOwnedRestaurant(w http.ResponseWriter, r *http.Request) {
+	owner := authmw.OwnerFromContext(r.Context())
+	if owner == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	var in dto.RestaurantIn
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	result, err := services.CreateRestaurantForOwner(database.DB, owner.ID, in)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to create restaurant")
+		return
+	}
+	writeJSON(w, http.StatusCreated, result)
+}
+
+func UpdateOwnedRestaurant(w http.ResponseWriter, r *http.Request) {
+	owner := authmw.OwnerFromContext(r.Context())
+	if owner == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	id := chi.URLParam(r, "restaurantID")
+	if !services.RestaurantBelongsToOwner(database.DB, id, owner.ID) {
+		writeError(w, http.StatusForbidden, "you do not own this restaurant")
+		return
+	}
+	var in dto.RestaurantIn
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	result, err := services.UpdateRestaurant(database.DB, id, in)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "Restaurant not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func AddOwnedMenuItem(w http.ResponseWriter, r *http.Request) {
+	owner := authmw.OwnerFromContext(r.Context())
+	if owner == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	id := chi.URLParam(r, "restaurantID")
+	if !services.RestaurantBelongsToOwner(database.DB, id, owner.ID) {
+		writeError(w, http.StatusForbidden, "you do not own this restaurant")
+		return
+	}
+	var in dto.MenuItemIn
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	result, err := services.AddMenuItem(database.DB, id, in)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "Restaurant not found")
+		return
+	}
+	writeJSON(w, http.StatusCreated, result)
+}
+
+func BulkImportMenu(w http.ResponseWriter, r *http.Request) {
+	owner := authmw.OwnerFromContext(r.Context())
+	if owner == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	id := chi.URLParam(r, "restaurantID")
+	if !services.RestaurantBelongsToOwner(database.DB, id, owner.ID) {
+		writeError(w, http.StatusForbidden, "you do not own this restaurant")
+		return
+	}
+	var in dto.BulkMenuImportIn
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if len(in.Items) == 0 {
+		writeError(w, http.StatusBadRequest, "items array is required and must not be empty")
+		return
+	}
+	result, err := services.BulkImportMenu(database.DB, id, in)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }

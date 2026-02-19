@@ -18,12 +18,12 @@ func main() {
 	s := mcpserver.NewServer()
 
 	switch cfg.MCPTransport {
-	case "sse":
+	case "http":
 		addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.MCPPort)
-		sseServer := server.NewSSEServer(s, server.WithBaseURL(fmt.Sprintf("http://%s", addr)))
-		log.Printf("🤖 AgentEats MCP server starting (SSE transport on %s)", addr)
-		if err := sseServer.Start(addr); err != nil {
-			log.Fatalf("MCP SSE server error: %v", err)
+		httpServer := server.NewStreamableHTTPServer(s, server.WithStateLess(true))
+		log.Printf("🤖 AgentEats MCP server starting (Streamable HTTP on %s/mcp)", addr)
+		if err := httpServer.Start(addr); err != nil {
+			log.Fatalf("MCP HTTP server error: %v", err)
 		}
 	default:
 		log.Println("🤖 AgentEats MCP server starting (stdio transport)")

@@ -577,3 +577,161 @@ func GetRecommendations(db *gorm.DB, cuisine, city, priceRange string, features,
 	}
 	return results
 }
+
+// --- Owner Registration ---
+
+// RegisterOwner creates a new owner account and returns the raw API key.
+func RegisterOwner(db *gorm.DB, in dto.RegisterOwnerIn) (*dto.RegisterOwnerOut, error) {
+	rawKey, keyHash := models.GenerateAPIKey()
+
+	owner := models.Owner{
+		ID:         models.NewID(),
+		Name:       in.Name,
+		Email:      in.Email,
+		APIKeyHash: keyHash,
+		IsActive:   true,
+	}
+
+	if err := db.Create(&owner).Error; err != nil {
+		return nil, fmt.Errorf("failed to create owner (email may already exist): %w", err)
+	}
+
+	return &dto.RegisterOwnerOut{
+		ID:     owner.ID,
+		Name:   owner.Name,
+		Email:  owner.Email,
+		APIKey: rawKey,
+	}, nil
+}
+
+// RotateAPIKey generates a new API key for an owner, invalidating the old one.
+func RotateAPIKey(db *gorm.DB, ownerID string) (string, error) {
+	rawKey, keyHash := models.GenerateAPIKey()
+	if err := db.Model(&models.Owner{}).Where("id = ?", ownerID).Update("api_key_hash", keyHash).Error; err != nil {
+		return "", err
+	}
+	return rawKey, nil
+}
+
+// --- Ownership Helpers ---
+
+// RestaurantBelongsToOwner checks if the owner owns the restaurant.
+func RestaurantBelongsToOwner(db *gorm.DB, restaurantID, ownerID string) bool {
+	var count int64
+	db.Model(&models.Restaurant{}).Where("id = ? AND owner_id = ?", restaurantID, ownerID).Count(&count)
+	return count > 0
+}
+
+// CreateRestaurantForOwner creates a restaurant assigned to the authenticated owner.
+func CreateRestaurantForOwner(db *gorm.DB, ownerID string, in dto.RestaurantIn) (*dto.RestaurantDetail, error) {
+	r := models.Restaurant{
+		ID:          models.NewID(),
+		OwnerID:     ownerID,
+		Name:        in.Name,
+		Description: in.Description,
+		Cuisines:    joinCSV(in.Cuisines),
+		PriceRange:  models.PriceRange(in.PriceRange),
+		Address:     in.Address,
+		City:        in.City,
+		State:       in.State,
+		ZipCode:     in.ZipCode,
+		Country:     in.Country,
+		Latitude:    in.Latitude,
+		Longitude:   in.Longitude,
+		Phone:       in.Phone,
+		Email:       in.Email,
+		Website:     in.Website,
+		Features:    joinCSV(in.Features),
+		TotalSeats:  in.TotalSeats,
+		IsActive:    true,
+	}
+
+	if r.Country == "" {
+		r.Country = "US"
+	}
+	if r.TotalSeats == 0 {
+		r.TotalSeats = 50
+	}
+	if r.PriceRange == "" {
+		r.PriceRange = models.PriceModerate
+	}
+
+	hours := make([]models.OperatingHours, len(in.Hours))
+	for i, h := range in.Hours {
+		hours[i] = models.OperatingHours{
+			RestaurantID: r.ID,
+			Day:          strings.ToLower(h.Day),
+			OpenTime:     h.OpenTime,
+			CloseTime:    h.CloseTime,
+			IsClosed:     h.IsClosed,
+		}
+	}
+	r.Hours = hours
+
+	if err := db.Create(&r).Error; err != nil {
+		return nil, err
+	}
+
+	detail := toDetail(&r)
+	return &detail, nil
+}
+
+// --- Bulk Menu Import ---
+
+// BulkImportMenu imports menu items for a restaurant.
+// Strategy "replace" deletes all existing items first. "merge" appends.
+func BulkImportMenu(db *gorm.DB, restaurantID string, in dto.BulkMenuImportIn) (*dto.BulkMenuImportOut, error) {
+	var r models.Restaurant
+	if err := db.First(&r, "id = ?", restaurantID).Error; err != nil {
+		return nil, fmt.Errorf("restaurant not found")
+	}
+
+	strategy := in.Strategy
+	if strategy == "" {
+		strategy = "replace"
+	}
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if strategy == "replace" {
+			if err := tx.Where("restaurant_id = ?", restaurantID).Delete(&models.MenuItem{}).Error; err != nil {
+				return fmt.Errorf("failed to clear existing menu: %w", err)
+			}
+		}
+
+		for _, item := range in.Items {
+			m := models.MenuItem{
+				ID:            models.NewID(),
+				RestaurantID:  restaurantID,
+				Category:      item.Category,
+				Name:          item.Name,
+				Description:   item.Description,
+				Price:         item.Price,
+				Currency:      item.Currency,
+				DietaryLabels: joinCSV(item.DietaryLabels),
+				IsAvailable:   item.IsAvailable,
+				IsPopular:     item.IsPopular,
+				ImageURL:      item.ImageURL,
+				Calories:      item.Calories,
+			}
+			if m.Currency == "" {
+				m.Currency = "USD"
+			}
+			if m.Category == "" {
+				m.Category = "Main"
+			}
+			if err := tx.Create(&m).Error; err != nil {
+				return fmt.Errorf("failed to import item %q: %w", item.Name, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.BulkMenuImportOut{
+		RestaurantID: restaurantID,
+		Imported:     len(in.Items),
+		Strategy:     strategy,
+	}, nil
+}

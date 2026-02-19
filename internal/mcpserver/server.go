@@ -133,49 +133,31 @@ func serviceInfoResource() mcp.Resource {
 
 // --- Tool Handlers ---
 
-func getStringParam(args map[string]any, key string) string {
-	if v, ok := args[key]; ok {
-		if s, ok := v.(string); ok {
-			return s
-		}
-	}
-	return ""
-}
-
-func getIntParam(args map[string]any, key string, defaultVal int) int {
-	if v, ok := args[key]; ok {
-		switch n := v.(type) {
-		case float64:
-			return int(n)
-		case int:
-			return n
-		}
-	}
-	return defaultVal
-}
-
 func toJSON(v any) string {
 	b, _ := json.MarshalIndent(v, "", "  ")
 	return string(b)
 }
 
-func handleSearchRestaurants(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args := request.Params.Arguments
-	query := getStringParam(args, "query")
-	city := getStringParam(args, "city")
-	cuisine := getStringParam(args, "cuisine")
-	priceRange := getStringParam(args, "price_range")
-	featuresStr := getStringParam(args, "features")
-	limit := getIntParam(args, "limit", 10)
-
-	var features []string
-	if featuresStr != "" {
-		for _, f := range strings.Split(featuresStr, ",") {
-			if t := strings.TrimSpace(f); t != "" {
-				features = append(features, t)
-			}
+func splitCSVParam(s string) []string {
+	if s == "" {
+		return nil
+	}
+	var out []string
+	for _, f := range strings.Split(s, ",") {
+		if t := strings.TrimSpace(f); t != "" {
+			out = append(out, t)
 		}
 	}
+	return out
+}
+
+func handleSearchRestaurants(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	query := request.GetString("query", "")
+	city := request.GetString("city", "")
+	cuisine := request.GetString("cuisine", "")
+	priceRange := request.GetString("price_range", "")
+	features := splitCSVParam(request.GetString("features", ""))
+	limit := request.GetInt("limit", 10)
 
 	results := services.ListRestaurants(database.DB, query, city, cuisine, priceRange, features, limit, 0)
 	if len(results) == 0 {
@@ -192,7 +174,7 @@ func handleSearchRestaurants(ctx context.Context, request mcp.CallToolRequest) (
 }
 
 func handleGetRestaurantDetails(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	id := getStringParam(request.Params.Arguments, "restaurant_id")
+	id := request.GetString("restaurant_id", "")
 	result, err := services.GetRestaurant(database.DB, id)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Restaurant not found: %s", id)), nil
@@ -201,7 +183,7 @@ func handleGetRestaurantDetails(ctx context.Context, request mcp.CallToolRequest
 }
 
 func handleGetMenu(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	id := getStringParam(request.Params.Arguments, "restaurant_id")
+	id := request.GetString("restaurant_id", "")
 	result, err := services.GetMenu(database.DB, id)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Restaurant not found: %s", id)), nil
@@ -210,30 +192,13 @@ func handleGetMenu(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallT
 }
 
 func handleGetRecommendations(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args := request.Params.Arguments
-	cuisine := getStringParam(args, "cuisine")
-	city := getStringParam(args, "city")
-	priceRange := getStringParam(args, "price_range")
-	featuresStr := getStringParam(args, "features")
-	dietaryStr := getStringParam(args, "dietary_needs")
-	occasion := getStringParam(args, "occasion")
-	limit := getIntParam(args, "limit", 5)
-
-	var features, dietary []string
-	if featuresStr != "" {
-		for _, f := range strings.Split(featuresStr, ",") {
-			if t := strings.TrimSpace(f); t != "" {
-				features = append(features, t)
-			}
-		}
-	}
-	if dietaryStr != "" {
-		for _, d := range strings.Split(dietaryStr, ",") {
-			if t := strings.TrimSpace(d); t != "" {
-				dietary = append(dietary, t)
-			}
-		}
-	}
+	cuisine := request.GetString("cuisine", "")
+	city := request.GetString("city", "")
+	priceRange := request.GetString("price_range", "")
+	features := splitCSVParam(request.GetString("features", ""))
+	dietary := splitCSVParam(request.GetString("dietary_needs", ""))
+	occasion := request.GetString("occasion", "")
+	limit := request.GetInt("limit", 5)
 
 	results := services.GetRecommendations(database.DB, cuisine, city, priceRange, features, dietary, occasion, limit)
 	if len(results) == 0 {
@@ -250,10 +215,9 @@ func handleGetRecommendations(ctx context.Context, request mcp.CallToolRequest) 
 }
 
 func handleCheckAvailability(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args := request.Params.Arguments
-	id := getStringParam(args, "restaurant_id")
-	date := getStringParam(args, "date")
-	partySize := getIntParam(args, "party_size", 2)
+	id := request.GetString("restaurant_id", "")
+	date := request.GetString("date", "")
+	partySize := request.GetInt("party_size", 2)
 
 	result, err := services.CheckAvailability(database.DB, id, date, partySize)
 	if err != nil {
@@ -263,17 +227,16 @@ func handleCheckAvailability(ctx context.Context, request mcp.CallToolRequest) (
 }
 
 func handleMakeReservation(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	args := request.Params.Arguments
-	id := getStringParam(args, "restaurant_id")
+	id := request.GetString("restaurant_id", "")
 
 	in := dto.ReservationIn{
-		CustomerName:    getStringParam(args, "customer_name"),
-		CustomerEmail:   getStringParam(args, "customer_email"),
-		CustomerPhone:   getStringParam(args, "customer_phone"),
-		PartySize:       getIntParam(args, "party_size", 2),
-		Date:            getStringParam(args, "date"),
-		Time:            getStringParam(args, "time"),
-		SpecialRequests: getStringParam(args, "special_requests"),
+		CustomerName:    request.GetString("customer_name", ""),
+		CustomerEmail:   request.GetString("customer_email", ""),
+		CustomerPhone:   request.GetString("customer_phone", ""),
+		PartySize:       request.GetInt("party_size", 2),
+		Date:            request.GetString("date", ""),
+		Time:            request.GetString("time", ""),
+		SpecialRequests: request.GetString("special_requests", ""),
 	}
 
 	result, err := services.MakeReservation(database.DB, id, in)
@@ -288,7 +251,7 @@ func handleMakeReservation(ctx context.Context, request mcp.CallToolRequest) (*m
 }
 
 func handleCancelReservation(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	id := getStringParam(request.Params.Arguments, "reservation_id")
+	id := request.GetString("reservation_id", "")
 	result, err := services.CancelReservation(database.DB, id)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Reservation not found: %s", id)), nil

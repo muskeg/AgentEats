@@ -424,11 +424,45 @@ func main() {
 
 	fmt.Println("🌱 Seeding AgentEats database...")
 
+	// --- Create demo owners ---
+	type ownerSeed struct {
+		Name  string
+		Email string
+	}
+	demoOwners := []ownerSeed{
+		{"Maria Rossi", "maria@bellanotte.example.com"},
+		{"Kenji Tanaka", "kenji@sakurahouse.example.com"},
+		{"Carlos Mendez", "carlos@eljardin.example.com"},
+		{"Sophie Laurent", "sophie@maisonlaurent.example.com"},
+	}
+
+	ownerIDs := make([]string, len(demoOwners))
+	fmt.Println("\n📋 Demo owner API keys (store these — they are shown only once):")
+	for i, o := range demoOwners {
+		rawKey, keyHash := models.GenerateAPIKey()
+		owner := models.Owner{
+			ID:         models.NewID(),
+			Name:       o.Name,
+			Email:      o.Email,
+			APIKeyHash: keyHash,
+			IsActive:   true,
+		}
+		if err := database.DB.Create(&owner).Error; err != nil {
+			log.Fatalf("Failed to create owner %s: %v", o.Name, err)
+		}
+		ownerIDs[i] = owner.ID
+		fmt.Printf("  %-20s %s\n", o.Name, rawKey)
+	}
+	fmt.Println()
+
 	seedData := getSeedData()
-	for _, entry := range seedData {
+	for i, entry := range seedData {
 		r := entry.Info
 		r.ID = models.NewID()
 		r.IsActive = true
+
+		// Assign an owner (cycle through demo owners)
+		r.OwnerID = ownerIDs[i%len(ownerIDs)]
 
 		if err := database.DB.Create(&r).Error; err != nil {
 			log.Fatalf("Failed to create restaurant %s: %v", r.Name, err)
