@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/muskeg/AgentEats/compare/v0.1.1...v0.1.2) (2026-02-19)
+
+
+### Bug Fixes
+
+* app registration for automated releases CI workflows ([#9](https://github.com/muskeg/AgentEats/issues/9)) ([7e6b0d3](https://github.com/muskeg/AgentEats/commit/7e6b0d32ee209312f1cf5f29156230e16271a702))
+* disable the go built-in cache clashing with the runners cache ([#7](https://github.com/muskeg/AgentEats/issues/7)) ([7db3c96](https://github.com/muskeg/AgentEats/commit/7db3c96ba335170096fd65bb7e72df79600b14dd))
+
 ## [0.1.1](https://github.com/muskeg/AgentEats/compare/v0.1.0...v0.1.1) (2026-02-19)
 
 
