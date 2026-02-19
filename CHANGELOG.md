@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/muskeg/AgentEats/compare/v0.1.2...v0.1.3) (2026-02-19)
+
+
+### Features
+
+* stateless mcp, restaurant api, auth and all that jazz ([#10](https://github.com/muskeg/AgentEats/issues/10)) ([b0eaffa](https://github.com/muskeg/AgentEats/commit/b0eaffa63730144fab4e36ac3439f96cf4c3e8e0))
+
 ## [0.1.2](https://github.com/muskeg/AgentEats/compare/v0.1.1...v0.1.2) (2026-02-19)
 
 
