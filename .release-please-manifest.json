@@ -1,6 +1,3 @@
 {
-  ".": {
-    "releaseType": "go",
-    "component": "agenteats"
-  }
+  ".": "0.1.0"
 }
