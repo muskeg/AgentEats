@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/muskeg/AgentEats/compare/v0.1.3...v0.1.4) (2026-02-19)
+
+
+### Bug Fixes
+
+* fixes macos releases ([#12](https://github.com/muskeg/AgentEats/issues/12)) ([74ec1c0](https://github.com/muskeg/AgentEats/commit/74ec1c0d47a85e10b19a43c860bf64bb2f1f644c))
+
 ## [0.1.3](https://github.com/muskeg/AgentEats/compare/v0.1.2...v0.1.3) (2026-02-19)
 
 
