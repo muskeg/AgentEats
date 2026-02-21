@@ -342,32 +342,57 @@
       const cuisineFilter = document.getElementById('cuisine-filter');
       const priceFilter = document.getElementById('price-filter');
 
-      let allRestaurants = [];
+      const PAGE_SIZE = 20;
+      let displayedRestaurants = []; // currently shown list
+      let allCuisines = new Set();   // for dropdown
+      let hasMore = true;            // whether more pages exist on server
+      let loadingMore = false;
 
-      // --- Fetch all restaurants ---
-      try {
-        allRestaurants = await AgentEatsAPI.searchRestaurants({ limit: 500 });
-        if (!Array.isArray(allRestaurants)) {
-          allRestaurants = allRestaurants.restaurants || allRestaurants.data || [];
+      // --- Fetch a page from the API ---
+      async function fetchPage(params = {}) {
+        const defaults = { limit: PAGE_SIZE, offset: 0 };
+        const merged = { ...defaults, ...params };
+        let results = await AgentEatsAPI.searchRestaurants(merged);
+        if (!Array.isArray(results)) {
+          results = results.restaurants || results.data || [];
         }
-      } catch (err) {
-        console.error('Failed to load restaurants:', err);
-        allRestaurants = [];
+        return results;
       }
 
+      // --- Fetch ALL matching restaurants (paginated) ---
+      async function fetchAll(params = {}) {
+        let all = [];
+        let offset = 0;
+        while (true) {
+          const page = await fetchPage({ ...params, limit: 100, offset });
+          all = all.concat(page);
+          if (page.length < 100) break;
+          offset += 100;
+        }
+        return all;
+      }
+
+      // --- Initial load (first page, no filters) ---
+      let initialRestaurants = [];
+      try {
+        initialRestaurants = await fetchPage({ limit: PAGE_SIZE, offset: 0 });
+        hasMore = initialRestaurants.length === PAGE_SIZE;
+      } catch (err) {
+        console.error('Failed to load restaurants:', err);
+      }
+      displayedRestaurants = initialRestaurants;
       loading.style.display = 'none';
 
-      // --- Build cuisine dropdown from data ---
-      const cuisines = new Set();
-      allRestaurants.forEach(r => {
-        (r.cuisines || []).forEach(c => cuisines.add(c));
-      });
-      [...cuisines].sort().forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        cuisineFilter.appendChild(opt);
-      });
+      // Also fetch all to build the cuisine dropdown (in background)
+      fetchAll().then(all => {
+        all.forEach(r => (r.cuisines || []).forEach(c => allCuisines.add(c)));
+        [...allCuisines].sort().forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          cuisineFilter.appendChild(opt);
+        });
+      }).catch(() => {});
 
       // --- Render helpers ---
       function renderStars(rating) {
@@ -408,34 +433,93 @@
         return div.innerHTML;
       }
 
-      function renderAll(list) {
+      function render(list, totalLabel) {
         if (list.length === 0) {
           grid.innerHTML = '';
           grid.style.display = 'none';
           empty.style.display = 'block';
           countEl.textContent = '';
+          loadMoreBtn.style.display = 'none';
           return;
         }
         empty.style.display = 'none';
         grid.style.display = '';
         grid.innerHTML = list.map(renderCard).join('');
-        countEl.textContent = `Showing ${list.length} restaurant${list.length !== 1 ? 's' : ''}`;
+        countEl.textContent = totalLabel || `Showing ${list.length} restaurant${list.length !== 1 ? 's' : ''}`;
       }
 
-      // --- Filtering ---
+      // --- "Load more" button ---
+      const loadMoreBtn = document.createElement('div');
+      loadMoreBtn.style.textAlign = 'center';
+      loadMoreBtn.style.margin = 'var(--space-lg) 0 var(--space-2xl)';
+      loadMoreBtn.innerHTML = '<button class="btn btn-outline" id="load-more-btn">Load More Restaurants</button>';
+      grid.parentNode.insertBefore(loadMoreBtn, grid.nextSibling);
+
+      const btn = document.getElementById('load-more-btn');
+      btn.addEventListener('click', async () => {
+        if (loadingMore) return;
+        loadingMore = true;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        try {
+          const more = await fetchPage({ limit: PAGE_SIZE, offset: displayedRestaurants.length });
+          displayedRestaurants = displayedRestaurants.concat(more);
+          hasMore = more.length === PAGE_SIZE;
+          render(displayedRestaurants);
+          updateLoadMoreVisibility();
+        } catch (err) {
+          console.error('Failed to load more:', err);
+        }
+        btn.disabled = false;
+        btn.textContent = 'Load More Restaurants';
+        loadingMore = false;
+      });
+
+      function updateLoadMoreVisibility() {
+        // Hide when filters are active (filtered results are fetched in full)
+        // or when no more pages exist
+        const filtersActive = searchInput.value.trim() || cuisineFilter.value || priceFilter.value;
+        loadMoreBtn.style.display = (!filtersActive && hasMore) ? '' : 'none';
+      }
+
+      // --- Filtering (server-side when active, shows all matches) ---
+      let filterTimeout = null;
       function applyFilters() {
-        const q = searchInput.value.toLowerCase().trim();
-        const cuisine = cuisineFilter.value;
-        const price = priceFilter.value;
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(async () => {
+          const q = searchInput.value.trim();
+          const cuisine = cuisineFilter.value;
+          const price = priceFilter.value;
 
-        const filtered = allRestaurants.filter(r => {
-          if (q && !(r.name || '').toLowerCase().includes(q)) return false;
-          if (cuisine && !(r.cuisines || []).includes(cuisine)) return false;
-          if (price && r.price_range !== price) return false;
-          return true;
-        });
+          // No filters → reset to paginated browse
+          if (!q && !cuisine && !price) {
+            try {
+              displayedRestaurants = await fetchPage({ limit: PAGE_SIZE, offset: 0 });
+              hasMore = displayedRestaurants.length === PAGE_SIZE;
+            } catch (err) {
+              console.error(err);
+            }
+            render(displayedRestaurants);
+            updateLoadMoreVisibility();
+            return;
+          }
 
-        renderAll(filtered);
+          // Filters active → fetch all matching from server
+          const params = {};
+          if (q) params.q = q;
+          if (cuisine) params.cuisine = cuisine;
+          if (price) params.price_range = price;
+
+          try {
+            const results = await fetchAll(params);
+            displayedRestaurants = results;
+            hasMore = false;
+            render(results, `Found ${results.length} restaurant${results.length !== 1 ? 's' : ''}`);
+          } catch (err) {
+            console.error('Search failed:', err);
+          }
+          updateLoadMoreVisibility();
+        }, 300); // debounce typing
       }
 
       searchInput.addEventListener('input', applyFilters);
@@ -443,7 +527,8 @@
       priceFilter.addEventListener('change', applyFilters);
 
       // Initial render
-      renderAll(allRestaurants);
+      render(displayedRestaurants);
+      updateLoadMoreVisibility();
     })();
   </script>
 </body>

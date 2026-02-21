@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -90,6 +91,10 @@ func CreateRestaurant(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := services.CreateRestaurant(database.DB, in)
 	if err != nil {
+		if errors.Is(err, services.ErrDuplicateRestaurant) {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
 		writeError(w, http.StatusInternalServerError, "Failed to create restaurant")
 		return
 	}
@@ -278,6 +283,10 @@ func CreateOwnedRestaurant(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := services.CreateRestaurantForOwner(database.DB, owner.ID, in)
 	if err != nil {
+		if errors.Is(err, services.ErrDuplicateRestaurant) {
+			writeError(w, http.StatusConflict, err.Error())
+			return
+		}
 		writeError(w, http.StatusInternalServerError, "Failed to create restaurant")
 		return
 	}
