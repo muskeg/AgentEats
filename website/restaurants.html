@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Restaurants — AgentEats</title>
+  <meta name="description" content="Browse all restaurants listed on AgentEats. Search by name, cuisine, or city. Restaurant owners can claim their listing.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* === Restaurant listing page styles === */
+    .listing-hero {
+      padding: var(--space-2xl) 0 var(--space-xl);
+      text-align: center;
+    }
+
+    .listing-hero h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: var(--space-sm);
+    }
+
+    .listing-hero p {
+      color: var(--color-text-muted);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* Search / filter bar */
+    .filter-bar {
+      display: flex;
+      gap: var(--space-md);
+      margin-bottom: var(--space-xl);
+      flex-wrap: wrap;
+    }
+
+    .filter-bar .form-input,
+    .filter-bar .form-select {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .filter-bar .search-input {
+      flex: 2;
+      min-width: 240px;
+    }
+
+    /* Restaurant grid */
+    .restaurant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-2xl);
+    }
+
+    .restaurant-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .restaurant-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .restaurant-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .restaurant-card-header h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .restaurant-rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+
+    .restaurant-address {
+      color: var(--color-text-muted);
+      font-size: 0.8125rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .restaurant-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-md);
+    }
+
+    .tag {
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+
+    .tag-cuisine {
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+    }
+
+    .tag-price {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .restaurant-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: auto;
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .feature-badge {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius-sm);
+      background: #eff6ff;
+      color: #1e40af;
+    }
+
+    /* Empty / loading states */
+    .listing-empty {
+      text-align: center;
+      padding: var(--space-3xl) var(--space-lg);
+      color: var(--color-text-muted);
+    }
+
+    .listing-empty h3 {
+      font-size: 1.25rem;
+      margin-bottom: var(--space-sm);
+      color: var(--color-text);
+    }
+
+    .listing-count {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Claim banner */
+    .claim-banner {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border: 1px solid #fbbf24;
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl) var(--space-2xl);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xl);
+      margin-bottom: var(--space-2xl);
+      flex-wrap: wrap;
+    }
+
+    .claim-banner-icon {
+      font-size: 2.5rem;
+      flex-shrink: 0;
+    }
+
+    .claim-banner-text {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .claim-banner-text h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #78350f;
+      margin-bottom: var(--space-xs);
+    }
+
+    .claim-banner-text p {
+      color: #92400e;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    .claim-banner-text a {
+      color: #78350f;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .claim-banner-text a:hover {
+      color: #451a03;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .listing-hero h1 {
+        font-size: 1.5rem;
+      }
+
+      .restaurant-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-bar {
+        flex-direction: column;
+      }
+
+      .filter-bar .form-input,
+      .filter-bar .form-select,
+      .filter-bar .search-input {
+        min-width: 100%;
+      }
+
+      .claim-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: var(--space-lg);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="index.html" class="nav-brand">🍽️ <span>Agent</span>Eats</a>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="restaurants.html" style="color: var(--color-primary);">Restaurants</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#agents">For Agents</a></li>
+        <li><a href="login.html" class="btn btn-outline btn-sm">Owner Login</a></li>
+        <li><a href="register.html" class="btn btn-primary btn-sm">List Your Restaurant</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Hero -->
+    <section class="listing-hero">
+      <h1>Browse Restaurants</h1>
+      <p>Explore all the restaurants listed on AgentEats — searchable by AI agents and humans alike.</p>
+    </section>
+
+    <!-- Claim banner -->
+    <div class="claim-banner">
+      <div class="claim-banner-icon">🏪</div>
+      <div class="claim-banner-text">
+        <h3>Is your restaurant listed here?</h3>
+        <p>
+          If you see your restaurant and want to claim it, manage your menu, and control your listing, reach out to us at
+          <a href="mailto:raphael@agenteats.food">raphael@agenteats.food</a>.
+          We'll transfer ownership to you so you can keep your information up to date.
+        </p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <input type="text" id="search-input" class="form-input search-input" placeholder="Search by name...">
+      <select id="cuisine-filter" class="form-select">
+        <option value="">All Cuisines</option>
+      </select>
+      <select id="price-filter" class="form-select">
+        <option value="">All Prices</option>
+        <option value="$">$ — Budget</option>
+        <option value="$$">$$ — Moderate</option>
+        <option value="$$$">$$$ — Upscale</option>
+        <option value="$$$$">$$$$ — Fine Dining</option>
+      </select>
+    </div>
+
+    <!-- Count-->
+    <div class="listing-count" id="listing-count"></div>
+
+    <!-- Grid -->
+    <div id="restaurant-grid" class="restaurant-grid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Empty state -->
+    <div id="listing-empty" class="listing-empty" style="display: none;">
+      <h3>No restaurants found</h3>
+      <p>Try adjusting your search or filters.</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="listing-loading" class="listing-empty">
+      <div class="spinner" style="margin: 0 auto var(--space-md);"></div>
+      <p>Loading restaurants...</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span>© 2026 AgentEats. Open-source restaurant directory for AI agents.</span>
+        <ul class="footer-links">
+          <li><a href="https://github.com/agenteats/agenteats" target="_blank">GitHub</a></li>
+          <li><a href="https://github.com/agenteats/agenteats/blob/main/docs/agents/README.md" target="_blank">Agent Docs</a></li>
+          <li><a href="https://github.com/agenteats/agenteats/blob/main/docs/owners/README.md" target="_blank">Owner Docs</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (async function () {
+      const grid = document.getElementById('restaurant-grid');
+      const empty = document.getElementById('listing-empty');
+      const loading = document.getElementById('listing-loading');
+      const countEl = document.getElementById('listing-count');
+      const searchInput = document.getElementById('search-input');
+      const cuisineFilter = document.getElementById('cuisine-filter');
+      const priceFilter = document.getElementById('price-filter');
+
+      let allRestaurants = [];
+
+      // --- Fetch all restaurants ---
+      try {
+        allRestaurants = await AgentEatsAPI.searchRestaurants({ limit: 500 });
+        if (!Array.isArray(allRestaurants)) {
+          allRestaurants = allRestaurants.restaurants || allRestaurants.data || [];
+        }
+      } catch (err) {
+        console.error('Failed to load restaurants:', err);
+        allRestaurants = [];
+      }
+
+      loading.style.display = 'none';
+
+      // --- Build cuisine dropdown from data ---
+      const cuisines = new Set();
+      allRestaurants.forEach(r => {
+        (r.cuisines || []).forEach(c => cuisines.add(c));
+      });
+      [...cuisines].sort().forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        cuisineFilter.appendChild(opt);
+      });
+
+      // --- Render helpers ---
+      function renderStars(rating) {
+        if (!rating) return '';
+        return `<span class="restaurant-rating">⭐ ${rating.toFixed(1)}</span>`;
+      }
+
+      function renderCard(r) {
+        const cuisineTags = (r.cuisines || [])
+          .map(c => `<span class="tag tag-cuisine">${escapeHTML(c)}</span>`)
+          .join('');
+        const priceTags = r.price_range
+          ? `<span class="tag tag-price">${escapeHTML(r.price_range)}</span>`
+          : '';
+        const featureBadges = (r.features || [])
+          .map(f => `<span class="feature-badge">${escapeHTML(f)}</span>`)
+          .join('');
+
+        return `
+          <div class="restaurant-card">
+            <div class="restaurant-card-header">
+              <h3>${escapeHTML(r.name)}</h3>
+              ${renderStars(r.rating)}
+            </div>
+            <div class="restaurant-address">📍 ${escapeHTML(r.address || r.city || 'Unknown location')}</div>
+            <div class="restaurant-tags">
+              ${cuisineTags}
+              ${priceTags}
+            </div>
+            ${featureBadges ? `<div class="restaurant-features">${featureBadges}</div>` : ''}
+          </div>
+        `;
+      }
+
+      function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+      }
+
+      function renderAll(list) {
+        if (list.length === 0) {
+          grid.innerHTML = '';
+          grid.style.display = 'none';
+          empty.style.display = 'block';
+          countEl.textContent = '';
+          return;
+        }
+        empty.style.display = 'none';
+        grid.style.display = '';
+        grid.innerHTML = list.map(renderCard).join('');
+        countEl.textContent = `Showing ${list.length} restaurant${list.length !== 1 ? 's' : ''}`;
+      }
+
+      // --- Filtering ---
+      function applyFilters() {
+        const q = searchInput.value.toLowerCase().trim();
+        const cuisine = cuisineFilter.value;
+        const price = priceFilter.value;
+
+        const filtered = allRestaurants.filter(r => {
+          if (q && !(r.name || '').toLowerCase().includes(q)) return false;
+          if (cuisine && !(r.cuisines || []).includes(cuisine)) return false;
+          if (price && r.price_range !== price) return false;
+          return true;
+        });
+
+        renderAll(filtered);
+      }
+
+      searchInput.addEventListener('input', applyFilters);
+      cuisineFilter.addEventListener('change', applyFilters);
+      priceFilter.addEventListener('change', applyFilters);
+
+      // Initial render
+      renderAll(allRestaurants);
+    })();
+  </script>
+</body>
+</html>
