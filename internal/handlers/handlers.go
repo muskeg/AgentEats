@@ -247,6 +247,16 @@ func RotateKey(w http.ResponseWriter, r *http.Request) {
 
 // --- Authenticated Restaurant Management ---
 
+func ListOwnedRestaurants(w http.ResponseWriter, r *http.Request) {
+	owner := authmw.OwnerFromContext(r.Context())
+	if owner == nil {
+		writeError(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+	results := services.ListOwnerRestaurants(database.DB, owner.ID)
+	writeJSON(w, http.StatusOK, results)
+}
+
 func CreateOwnedRestaurant(w http.ResponseWriter, r *http.Request) {
 	owner := authmw.OwnerFromContext(r.Context())
 	if owner == nil {
