@@ -14,6 +14,7 @@ type Config struct {
 	Debug        bool   `envconfig:"DEBUG" default:"false"`
 	MCPTransport string `envconfig:"MCP_TRANSPORT" default:"stdio"` // "stdio" or "http"
 	MCPPort      int    `envconfig:"MCP_PORT" default:"8001"`
+	CORSOrigins  string `envconfig:"CORS_ORIGINS" default:"*"` // comma-separated allowed origins
 }
 
 // Load reads configuration from environment variables.
