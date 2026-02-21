@@ -63,6 +63,9 @@
       transition: box-shadow 0.2s, transform 0.2s;
       display: flex;
       flex-direction: column;
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
     }
 
     .restaurant-card:hover {
@@ -412,7 +415,7 @@
           .join('');
 
         return `
-          <div class="restaurant-card">
+          <a href="restaurant.html?id=${encodeURIComponent(r.id)}" class="restaurant-card">
             <div class="restaurant-card-header">
               <h3>${escapeHTML(r.name)}</h3>
               ${renderStars(r.rating)}
@@ -423,7 +426,7 @@
               ${priceTags}
             </div>
             ${featureBadges ? `<div class="restaurant-features">${featureBadges}</div>` : ''}
-          </div>
+          </a>
         `;
       }
 
