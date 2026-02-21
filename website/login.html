@@ -116,20 +116,17 @@
       UI.setLoading(submitBtn, true);
 
       try {
-        // Temporarily store the key and try an authenticated request
+        // Store the key and validate it by fetching owned restaurants
         AgentEatsAPI.login(apiKey);
 
-        // Try to create a restaurant with empty body to validate the key
-        // This will fail with 400 (bad request) if key is valid, or 401 if invalid
         try {
-          await AgentEatsAPI.createRestaurant({});
+          await AgentEatsAPI.listMyRestaurants();
         } catch (err) {
           if (err.status === 401) {
             AgentEatsAPI.logout();
             throw new Error('Invalid or inactive API key.');
           }
-          // Any other error means the key was accepted (auth passed)
-          // 400/500 = key is valid, request body was just wrong
+          throw err;
         }
 
         UI.showToast('Logged in successfully!', 'success');
