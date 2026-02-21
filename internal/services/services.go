@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -11,6 +12,10 @@ import (
 	"github.com/agenteats/agenteats/internal/dto"
 	"github.com/agenteats/agenteats/internal/models"
 )
+
+// ErrDuplicateRestaurant is returned when a restaurant with the same name
+// already exists in the same city.
+var ErrDuplicateRestaurant = errors.New("a restaurant with this name already exists in this city")
 
 // --- Helpers ---
 
@@ -114,6 +119,20 @@ func toReservationOut(r *models.Reservation, restaurantName string) dto.Reservat
 	}
 }
 
+// checkDuplicateRestaurant returns ErrDuplicateRestaurant if an active
+// restaurant with the same name already exists in the same city.
+// The comparison is case-insensitive.
+func checkDuplicateRestaurant(db *gorm.DB, name, city string) error {
+	var count int64
+	db.Model(&models.Restaurant{}).
+		Where("LOWER(name) = LOWER(?) AND LOWER(city) = LOWER(?) AND is_active = ?", name, city, true).
+		Count(&count)
+	if count > 0 {
+		return ErrDuplicateRestaurant
+	}
+	return nil
+}
+
 // --- Restaurant CRUD ---
 
 // ListRestaurants searches and filters restaurants.
@@ -160,6 +179,9 @@ func GetRestaurant(db *gorm.DB, id string) (*dto.RestaurantDetail, error) {
 
 // CreateRestaurant registers a new restaurant.
 func CreateRestaurant(db *gorm.DB, in dto.RestaurantIn) (*dto.RestaurantDetail, error) {
+	if err := checkDuplicateRestaurant(db, in.Name, in.City); err != nil {
+		return nil, err
+	}
 	r := models.Restaurant{
 		ID:          models.NewID(),
 		Name:        in.Name,
@@ -636,6 +658,9 @@ func RestaurantBelongsToOwner(db *gorm.DB, restaurantID, ownerID string) bool {
 
 // CreateRestaurantForOwner creates a restaurant assigned to the authenticated owner.
 func CreateRestaurantForOwner(db *gorm.DB, ownerID string, in dto.RestaurantIn) (*dto.RestaurantDetail, error) {
+	if err := checkDuplicateRestaurant(db, in.Name, in.City); err != nil {
+		return nil, err
+	}
 	r := models.Restaurant{
 		ID:          models.NewID(),
 		OwnerID:     ownerID,
