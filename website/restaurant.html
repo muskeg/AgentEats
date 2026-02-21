@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant — AgentEats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* === Detail page styles === */
+    .detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-lg);
+    }
+    .detail-back:hover { color: var(--color-primary); }
+
+    .detail-header {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .detail-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: var(--space-sm);
+    }
+
+    .detail-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-md);
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .detail-rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .detail-description {
+      color: var(--color-text-muted);
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      max-width: 700px;
+      margin-bottom: var(--space-xl);
+    }
+
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Two-column layout */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: var(--space-2xl);
+      align-items: start;
+    }
+
+    /* Info sidebar */
+    .detail-sidebar {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-lg));
+    }
+
+    .info-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      margin-bottom: var(--space-lg);
+    }
+
+    .info-card h3 {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      margin-bottom: var(--space-md);
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: var(--space-sm) 0;
+      font-size: 0.8125rem;
+    }
+
+    .info-row .info-label {
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+      margin-right: var(--space-md);
+    }
+
+    .info-row .info-value {
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .info-row .info-value a {
+      color: var(--color-primary);
+    }
+
+    /* Hours table */
+    .hours-table {
+      width: 100%;
+      font-size: 0.8125rem;
+    }
+
+    .hours-table td {
+      padding: var(--space-xs) 0;
+    }
+
+    .hours-table .day {
+      color: var(--color-text-muted);
+      text-transform: capitalize;
+      width: 100px;
+    }
+
+    .hours-table .hours-closed {
+      color: var(--color-error);
+    }
+
+    /* Features */
+    .features-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+
+    .feature-pill {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full);
+      background: #eff6ff;
+      color: #1e40af;
+    }
+
+    /* Menu section */
+    .menu-section {
+      min-width: 0;
+    }
+
+    .menu-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-xl);
+    }
+
+    .menu-category {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .menu-category-header {
+      font-size: 1.125rem;
+      font-weight: 700;
+      padding-bottom: var(--space-sm);
+      border-bottom: 2px solid var(--color-primary);
+      margin-bottom: var(--space-md);
+    }
+
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-md);
+      padding: var(--space-md) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .menu-item-name {
+      font-weight: 600;
+      font-size: 0.9375rem;
+      margin-bottom: 0.125rem;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .menu-item-name .popular-badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .menu-item-name .unavailable-badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      background: #fef2f2;
+      color: #991b1b;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .menu-item-desc {
+      color: var(--color-text-muted);
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      margin-top: 0.125rem;
+    }
+
+    .menu-item-labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: var(--space-xs);
+    }
+
+    .dietary-label {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      padding: 0.1rem 0.35rem;
+      border-radius: var(--radius-sm);
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .menu-item-price {
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: var(--color-text);
+      white-space: nowrap;
+    }
+
+    .menu-empty {
+      text-align: center;
+      padding: var(--space-2xl);
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border-radius: var(--radius-lg);
+    }
+
+    .menu-empty h3 {
+      margin-bottom: var(--space-sm);
+      color: var(--color-text);
+    }
+
+    /* Claim callout */
+    .claim-callout {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      font-size: 0.875rem;
+      color: #92400e;
+      line-height: 1.6;
+    }
+
+    .claim-callout strong {
+      color: #78350f;
+    }
+
+    .claim-callout a {
+      color: #78350f;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Loading / error */
+    .detail-loading, .detail-error {
+      text-align: center;
+      padding: var(--space-3xl);
+      color: var(--color-text-muted);
+    }
+
+    .detail-error h2 {
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-sidebar {
+        position: static;
+        order: -1;
+      }
+
+      .detail-header h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="index.html" class="nav-brand">🍽️ <span>Agent</span>Eats</a>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="restaurants.html">Restaurants</a></li>
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#agents">For Agents</a></li>
+        <li><a href="login.html" class="btn btn-outline btn-sm">Owner Login</a></li>
+        <li><a href="register.html" class="btn btn-primary btn-sm">List Your Restaurant</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container" style="padding-top: var(--space-xl); padding-bottom: var(--space-3xl);">
+    <!-- Loading -->
+    <div id="detail-loading" class="detail-loading">
+      <div class="spinner" style="margin: 0 auto var(--space-md);"></div>
+      <p>Loading restaurant...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="detail-error" class="detail-error" style="display: none;">
+      <h2>Restaurant not found</h2>
+      <p>This restaurant doesn't exist or may have been removed.</p>
+      <a href="restaurants.html" class="btn btn-primary" style="margin-top: var(--space-lg);">Browse Restaurants</a>
+    </div>
+
+    <!-- Content (hidden until loaded) -->
+    <div id="detail-content" style="display: none;">
+      <a href="restaurants.html" class="detail-back">← Back to restaurants</a>
+
+      <div class="detail-header">
+        <h1 id="r-name"></h1>
+        <div class="detail-meta">
+          <span id="r-rating"></span>
+          <span id="r-address"></span>
+          <span id="r-price"></span>
+        </div>
+        <div class="detail-tags" id="r-cuisines"></div>
+        <p class="detail-description" id="r-description"></p>
+      </div>
+
+      <div class="detail-grid">
+        <!-- Menu (main area) -->
+        <div class="menu-section" id="menu-section">
+          <h2>Menu</h2>
+          <div id="menu-content"></div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="detail-sidebar">
+          <!-- Info card -->
+          <div class="info-card">
+            <h3>Details</h3>
+            <div id="r-info-rows"></div>
+            <div id="r-features" style="margin-top: var(--space-md);"></div>
+          </div>
+
+          <!-- Hours card -->
+          <div class="info-card" id="hours-card" style="display: none;">
+            <h3>Hours</h3>
+            <table class="hours-table" id="r-hours"></table>
+          </div>
+
+          <!-- Claim callout -->
+          <div class="claim-callout">
+            <strong>Is this your restaurant?</strong><br>
+            Claim it and manage your listing by contacting
+            <a href="mailto:raphael@agenteats.food">raphael@agenteats.food</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span>© 2026 AgentEats. Open-source restaurant directory for AI agents.</span>
+        <ul class="footer-links">
+          <li><a href="https://github.com/muskeg/AgentEats" target="_blank">GitHub</a></li>
+          <li><a href="https://github.com/muskeg/AgentEats/blob/main/docs/agents/README.md" target="_blank">Agent Docs</a></li>
+          <li><a href="https://github.com/muskeg/AgentEats/blob/main/docs/owners/README.md" target="_blank">Owner Docs</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (async function () {
+      const loadingEl = document.getElementById('detail-loading');
+      const errorEl = document.getElementById('detail-error');
+      const contentEl = document.getElementById('detail-content');
+
+      const id = new URLSearchParams(window.location.search).get('id');
+      if (!id) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = '';
+        return;
+      }
+
+      function esc(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+      }
+
+      // Fetch restaurant + menu in parallel
+      let restaurant, menu;
+      try {
+        [restaurant, menu] = await Promise.all([
+          AgentEatsAPI.getRestaurant(id),
+          AgentEatsAPI.getMenu(id).catch(() => null),
+        ]);
+      } catch (err) {
+        console.error(err);
+        loadingEl.style.display = 'none';
+        errorEl.style.display = '';
+        return;
+      }
+
+      loadingEl.style.display = 'none';
+      contentEl.style.display = '';
+
+      // --- Page title ---
+      document.title = `${restaurant.name} — AgentEats`;
+
+      // --- Header ---
+      document.getElementById('r-name').textContent = restaurant.name;
+
+      const ratingEl = document.getElementById('r-rating');
+      if (restaurant.rating) {
+        ratingEl.innerHTML = `<span class="detail-rating">⭐ ${restaurant.rating.toFixed(1)}</span>`;
+      }
+
+      document.getElementById('r-address').textContent =
+        '📍 ' + [restaurant.address, restaurant.city, restaurant.state].filter(Boolean).join(', ');
+
+      document.getElementById('r-price').textContent = restaurant.price_range || '';
+
+      // Cuisines
+      const cuisinesEl = document.getElementById('r-cuisines');
+      (restaurant.cuisines || []).forEach(c => {
+        cuisinesEl.innerHTML += `<span class="tag tag-cuisine">${esc(c)}</span>`;
+      });
+
+      // Description
+      const descEl = document.getElementById('r-description');
+      if (restaurant.description) {
+        descEl.textContent = restaurant.description;
+      } else {
+        descEl.style.display = 'none';
+      }
+
+      // --- Info sidebar ---
+      const infoRows = document.getElementById('r-info-rows');
+      const infoData = [];
+
+      if (restaurant.phone)
+        infoData.push(['Phone', `<a href="tel:${esc(restaurant.phone)}">${esc(restaurant.phone)}</a>`]);
+      if (restaurant.email)
+        infoData.push(['Email', `<a href="mailto:${esc(restaurant.email)}">${esc(restaurant.email)}</a>`]);
+      if (restaurant.website)
+        infoData.push(['Website', `<a href="${esc(restaurant.website)}" target="_blank" rel="noopener">${esc(restaurant.website.replace(/^https?:\/\//, ''))}</a>`]);
+      if (restaurant.country)
+        infoData.push(['Country', esc(restaurant.country)]);
+      if (restaurant.zip_code)
+        infoData.push(['ZIP', esc(restaurant.zip_code)]);
+      if (restaurant.total_seats)
+        infoData.push(['Seats', restaurant.total_seats]);
+
+      infoRows.innerHTML = infoData.map(([label, value]) =>
+        `<div class="info-row"><span class="info-label">${label}</span><span class="info-value">${value}</span></div>`
+      ).join('');
+
+      // Features
+      const featuresEl = document.getElementById('r-features');
+      if ((restaurant.features || []).length) {
+        featuresEl.innerHTML = '<div class="features-list">' +
+          restaurant.features.map(f => `<span class="feature-pill">${esc(f)}</span>`).join('') +
+          '</div>';
+      }
+
+      // --- Hours ---
+      const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      if ((restaurant.hours || []).length) {
+        const hoursCard = document.getElementById('hours-card');
+        hoursCard.style.display = '';
+        const hoursTable = document.getElementById('r-hours');
+        const hoursByDay = {};
+        restaurant.hours.forEach(h => { hoursByDay[h.day] = h; });
+
+        hoursTable.innerHTML = dayOrder.map(day => {
+          const h = hoursByDay[day];
+          if (!h || h.is_closed) {
+            return `<tr><td class="day">${day}</td><td class="hours-closed">Closed</td></tr>`;
+          }
+          return `<tr><td class="day">${day}</td><td>${esc(h.open_time)} – ${esc(h.close_time)}</td></tr>`;
+        }).join('');
+      }
+
+      // --- Menu ---
+      const menuContent = document.getElementById('menu-content');
+      const categories = menu?.categories;
+
+      if (!categories || Object.keys(categories).length === 0) {
+        menuContent.innerHTML = `
+          <div class="menu-empty">
+            <h3>🍽️ Menu not available yet</h3>
+            <p>This restaurant hasn't uploaded their menu. Check back soon!</p>
+          </div>`;
+        return;
+      }
+
+      const currency = menu.currency || 'CAD';
+      const currencyFormatter = new Intl.NumberFormat('en-CA', {
+        style: 'currency',
+        currency: currency,
+      });
+
+      let menuHTML = '';
+      for (const [category, items] of Object.entries(categories)) {
+        menuHTML += `<div class="menu-category">
+          <h3 class="menu-category-header">${esc(category)}</h3>`;
+
+        for (const item of items) {
+          const badges = [];
+          if (item.is_popular) badges.push('<span class="popular-badge">🔥 Popular</span>');
+          if (!item.is_available) badges.push('<span class="unavailable-badge">Unavailable</span>');
+
+          const labels = (item.dietary_labels || [])
+            .map(l => `<span class="dietary-label">${esc(l)}</span>`).join('');
+
+          menuHTML += `
+            <div class="menu-item${!item.is_available ? ' style="opacity: 0.5;"' : ''}">
+              <div class="menu-item-info">
+                <div class="menu-item-name">
+                  ${esc(item.name)}
+                  ${badges.join('')}
+                </div>
+                ${item.description ? `<div class="menu-item-desc">${esc(item.description)}</div>` : ''}
+                ${labels ? `<div class="menu-item-labels">${labels}</div>` : ''}
+              </div>
+              <div class="menu-item-price">${currencyFormatter.format(item.price)}</div>
+            </div>`;
+        }
+        menuHTML += '</div>';
+      }
+
+      menuContent.innerHTML = menuHTML;
+    })();
+  </script>
+</body>
+</html>

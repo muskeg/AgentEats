@@ -63,6 +63,9 @@
       transition: box-shadow 0.2s, transform 0.2s;
       display: flex;
       flex-direction: column;
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
     }
 
     .restaurant-card:hover {
@@ -322,9 +325,9 @@
       <div class="footer-inner">
         <span>© 2026 AgentEats. Open-source restaurant directory for AI agents.</span>
         <ul class="footer-links">
-          <li><a href="https://github.com/agenteats/agenteats" target="_blank">GitHub</a></li>
-          <li><a href="https://github.com/agenteats/agenteats/blob/main/docs/agents/README.md" target="_blank">Agent Docs</a></li>
-          <li><a href="https://github.com/agenteats/agenteats/blob/main/docs/owners/README.md" target="_blank">Owner Docs</a></li>
+          <li><a href="https://github.com/muskeg/AgentEats" target="_blank">GitHub</a></li>
+          <li><a href="https://github.com/muskeg/AgentEats/blob/main/docs/agents/README.md" target="_blank">Agent Docs</a></li>
+          <li><a href="https://github.com/muskeg/AgentEats/blob/main/docs/owners/README.md" target="_blank">Owner Docs</a></li>
         </ul>
       </div>
     </div>
@@ -412,7 +415,7 @@
           .join('');
 
         return `
-          <div class="restaurant-card">
+          <a href="restaurant.html?id=${encodeURIComponent(r.id)}" class="restaurant-card">
             <div class="restaurant-card-header">
               <h3>${escapeHTML(r.name)}</h3>
               ${renderStars(r.rating)}
@@ -423,7 +426,7 @@
               ${priceTags}
             </div>
             ${featureBadges ? `<div class="restaurant-features">${featureBadges}</div>` : ''}
-          </div>
+          </a>
         `;
       }
 
