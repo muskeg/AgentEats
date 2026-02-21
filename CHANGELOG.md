@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/muskeg/AgentEats/compare/v0.1.4...v0.2.0) (2026-02-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* website and dashboards ([#14](https://github.com/muskeg/AgentEats/issues/14))
+
+### Features
+
+* website and dashboards ([#14](https://github.com/muskeg/AgentEats/issues/14)) ([d114aea](https://github.com/muskeg/AgentEats/commit/d114aea95cff26897cbb00740988e6f026aa670c))
+
+
+### Bug Fixes
+
+* change login validation endpoint ([#17](https://github.com/muskeg/AgentEats/issues/17)) ([fc086f3](https://github.com/muskeg/AgentEats/commit/fc086f3609ec50f7393aa6272dc8e19a63ee1660))
+* fix routes to associate restaurants to owners ([#16](https://github.com/muskeg/AgentEats/issues/16)) ([c04f499](https://github.com/muskeg/AgentEats/commit/c04f499e10327300fa33c0d9199d5c18ae4e1318))
+
 ## [0.1.4](https://github.com/muskeg/AgentEats/compare/v0.1.3...v0.1.4) (2026-02-19)
 
 
