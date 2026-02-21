@@ -77,10 +77,7 @@ async function loadMyRestaurants() {
   const container = document.getElementById('restaurant-list');
 
   try {
-    // The API doesn't have a "my restaurants" endpoint yet,
-    // so we'll search all and the owner can see which ones they can edit.
-    // For now, show a helpful message.
-    const results = await AgentEatsAPI.searchRestaurants({ limit: 100 });
+    const results = await AgentEatsAPI.listMyRestaurants();
     myRestaurants = Array.isArray(results) ? results : [];
 
     if (myRestaurants.length === 0) {

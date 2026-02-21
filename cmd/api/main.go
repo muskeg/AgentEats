@@ -81,6 +81,7 @@ func main() {
 		r.Post("/owners/rotate-key", handlers.RotateKey)
 
 		// Restaurant management
+		r.Get("/owners/restaurants", handlers.ListOwnedRestaurants)
 		r.Post("/restaurants", handlers.CreateOwnedRestaurant)
 		r.Put("/restaurants/{restaurantID}", handlers.UpdateOwnedRestaurant)
 

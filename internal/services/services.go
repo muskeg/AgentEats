@@ -615,6 +615,18 @@ func RotateAPIKey(db *gorm.DB, ownerID string) (string, error) {
 
 // --- Ownership Helpers ---
 
+// ListOwnerRestaurants returns all restaurants belonging to the given owner.
+func ListOwnerRestaurants(db *gorm.DB, ownerID string) []dto.RestaurantSummary {
+	var restaurants []models.Restaurant
+	db.Where("owner_id = ? AND is_active = ?", ownerID, true).
+		Order("name ASC").Find(&restaurants)
+	results := make([]dto.RestaurantSummary, len(restaurants))
+	for i := range restaurants {
+		results[i] = toSummary(&restaurants[i])
+	}
+	return results
+}
+
 // RestaurantBelongsToOwner checks if the owner owns the restaurant.
 func RestaurantBelongsToOwner(db *gorm.DB, restaurantID, ownerID string) bool {
 	var count int64

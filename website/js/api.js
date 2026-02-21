@@ -95,6 +95,10 @@ async function searchRestaurants(params = {}) {
   return apiFetch(`/restaurants${qs ? '?' + qs : ''}`);
 }
 
+async function listMyRestaurants() {
+  return apiFetch('/owners/restaurants');
+}
+
 // --- Menu ---
 
 async function addMenuItem(restaurantId, item) {
@@ -127,6 +131,7 @@ window.AgentEatsAPI = {
   updateRestaurant,
   getRestaurant,
   searchRestaurants,
+  listMyRestaurants,
   addMenuItem,
   bulkImportMenu,
   getMenu,
