@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/muskeg/AgentEats/compare/v0.2.1...v0.2.2) (2026-02-21)
+
+
+### Features
+
+* fuzzy checks for duplicate restaurants + better search ([#20](https://github.com/muskeg/AgentEats/issues/20)) ([cc879de](https://github.com/muskeg/AgentEats/commit/cc879de1ecdbbbb34bc7d9d731bbaf002b280893))
+
 ## [0.2.1](https://github.com/muskeg/AgentEats/compare/v0.2.0...v0.2.1) (2026-02-21)
 
 
