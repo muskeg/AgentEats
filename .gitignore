@@ -51,6 +51,9 @@ ehthumbs.db
 # Planning (local only)
 .planning/
 
+# Scraping scripts & output (local only)
+scripts/scrape/
+
 # Misc
 *.log
 tmp/
