@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owner Login — AgentEats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-page {
+      min-height: calc(100vh - var(--header-height));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .auth-card h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-xs);
+    }
+
+    .auth-card .subtitle {
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-xl);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-lg);
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="index.html" class="nav-brand">🍽️ <span>Agent</span>Eats</a>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="register.html">Register</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="auth-page">
+    <div class="auth-card">
+      <form id="login-form">
+        <h1>Owner Login</h1>
+        <p class="subtitle">Paste your API key to access your restaurant dashboard.</p>
+
+        <div id="form-error" class="alert alert-error" style="display: none;"></div>
+
+        <div class="form-group">
+          <label for="api-key">API Key</label>
+          <input type="password" id="api-key" class="form-input" placeholder="ae_7e924bfa8fe1e4190d..." required
+                 autocomplete="off" style="font-family: var(--font-mono); font-size: 0.8125rem;">
+          <p class="hint">The key you received when you registered. Starts with <code>ae_</code>.</p>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn btn-primary btn-lg" style="width: 100%;">
+          Log In
+        </button>
+
+        <div class="auth-footer">
+          Don't have an account? <a href="register.html">Register</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // If already logged in, go straight to dashboard
+    if (AgentEatsAPI.isLoggedIn()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    const form = document.getElementById('login-form');
+    const errorDiv = document.getElementById('form-error');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorDiv.style.display = 'none';
+
+      const apiKey = document.getElementById('api-key').value.trim();
+
+      if (!apiKey) {
+        errorDiv.textContent = 'Please enter your API key.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      if (!apiKey.startsWith('ae_')) {
+        errorDiv.textContent = 'Invalid key format. API keys start with "ae_".';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      UI.setLoading(submitBtn, true);
+
+      try {
+        // Temporarily store the key and try an authenticated request
+        AgentEatsAPI.login(apiKey);
+
+        // Try to create a restaurant with empty body to validate the key
+        // This will fail with 400 (bad request) if key is valid, or 401 if invalid
+        try {
+          await AgentEatsAPI.createRestaurant({});
+        } catch (err) {
+          if (err.status === 401) {
+            AgentEatsAPI.logout();
+            throw new Error('Invalid or inactive API key.');
+          }
+          // Any other error means the key was accepted (auth passed)
+          // 400/500 = key is valid, request body was just wrong
+        }
+
+        UI.showToast('Logged in successfully!', 'success');
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+        UI.setLoading(submitBtn, false);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — AgentEats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-page {
+      min-height: calc(100vh - var(--header-height));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .auth-card h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-xs);
+    }
+
+    .auth-card .subtitle {
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+      margin-bottom: var(--space-xl);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-lg);
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+    }
+
+    /* Success state */
+    #success-panel {
+      display: none;
+    }
+
+    #success-panel.visible {
+      display: block;
+    }
+
+    #register-form.hidden {
+      display: none;
+    }
+
+    .key-warning {
+      margin-top: var(--space-lg);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="index.html" class="nav-brand">🍽️ <span>Agent</span>Eats</a>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="login.html">Owner Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="auth-page">
+    <div class="auth-card">
+      <!-- Registration Form -->
+      <form id="register-form">
+        <h1>Create your account</h1>
+        <p class="subtitle">Register to list and manage your restaurant on AgentEats.</p>
+
+        <div id="form-error" class="alert alert-error" style="display: none;"></div>
+
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" class="form-input" placeholder="Maria Rossi" required autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="maria@bellanotte.com" required autocomplete="email">
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn btn-primary btn-lg" style="width: 100%;">
+          Create Account
+        </button>
+
+        <div class="auth-footer">
+          Already have an API key? <a href="login.html">Log in</a>
+        </div>
+      </form>
+
+      <!-- Success Panel -->
+      <div id="success-panel">
+        <h1>Account created! 🎉</h1>
+        <p class="subtitle">Welcome, <strong id="owner-name"></strong>. Here's your API key — you'll need it to manage your restaurant.</p>
+
+        <div class="alert alert-warning key-warning">
+          <div>
+            <strong>⚠️ Save this key now!</strong><br>
+            This is the only time it will be displayed. Store it somewhere safe — you cannot recover it later.
+          </div>
+        </div>
+
+        <div class="api-key-display" style="margin-top: var(--space-lg);">
+          <span id="api-key-value"></span>
+          <button type="button" class="copy-btn" onclick="UI.copyToClipboard(document.getElementById('api-key-value').textContent)">
+            📋 Copy
+          </button>
+        </div>
+
+        <div style="margin-top: var(--space-xl);">
+          <a href="dashboard.html" id="continue-btn" class="btn btn-primary btn-lg" style="width: 100%;">
+            Continue to Dashboard →
+          </a>
+        </div>
+
+        <div class="auth-footer">
+          Your key has been saved to this browser session. You'll stay logged in until you close this tab.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const form = document.getElementById('register-form');
+    const errorDiv = document.getElementById('form-error');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorDiv.style.display = 'none';
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      if (!name || !email) {
+        errorDiv.textContent = 'Please fill in all fields.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      UI.setLoading(submitBtn, true);
+
+      try {
+        const result = await AgentEatsAPI.registerOwner(name, email);
+
+        // Store the key in session
+        AgentEatsAPI.login(result.api_key);
+
+        // Show success panel
+        document.getElementById('owner-name').textContent = result.name;
+        document.getElementById('api-key-value').textContent = result.api_key;
+        form.classList.add('hidden');
+        document.getElementById('success-panel').classList.add('visible');
+
+      } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+        UI.setLoading(submitBtn, false);
+      }
+    });
+  </script>
+</body>
+</html>
