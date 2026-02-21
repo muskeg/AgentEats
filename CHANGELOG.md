@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/muskeg/AgentEats/compare/v0.2.2...v0.2.3) (2026-02-21)
+
+
+### Features
+
+* restaurant info cards ([#22](https://github.com/muskeg/AgentEats/issues/22)) ([90ba111](https://github.com/muskeg/AgentEats/commit/90ba111b536c9d56969ddc500415a5f495713e5e))
+
 ## [0.2.2](https://github.com/muskeg/AgentEats/compare/v0.2.1...v0.2.2) (2026-02-21)
 
 
