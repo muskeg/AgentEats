@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/muskeg/AgentEats/compare/v0.2.0...v0.2.1) (2026-02-21)
+
+
+### Features
+
+* restaurants list ([#18](https://github.com/muskeg/AgentEats/issues/18)) ([c938dc1](https://github.com/muskeg/AgentEats/commit/c938dc19d46b65720ca4fc95ccef37a90ab173bb))
+
 ## [0.2.0](https://github.com/muskeg/AgentEats/compare/v0.1.4...v0.2.0) (2026-02-21)
 
 
