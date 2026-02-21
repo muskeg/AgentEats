@@ -268,6 +268,14 @@ func CreateOwnedRestaurant(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+	if in.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if in.Address == "" || in.City == "" {
+		writeError(w, http.StatusBadRequest, "address and city are required")
+		return
+	}
 	result, err := services.CreateRestaurantForOwner(database.DB, owner.ID, in)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to create restaurant")
