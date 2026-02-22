@@ -277,4 +277,4 @@ CI/CD is handled by GitHub Actions:
 
 ## License
 
-MIT
+All rights reserved. This software is proprietary and not licensed for redistribution.

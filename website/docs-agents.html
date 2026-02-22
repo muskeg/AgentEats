@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent & Developer Docs — AgentEats</title>
+  <meta name="description" content="Documentation for AI agents and developers integrating with AgentEats. REST API reference, MCP integration, data types, and best practices.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="index.html" class="nav-brand">🍽️ <span>Agent</span>Eats</a>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="restaurants.html">Restaurants</a></li>
+        <li><a href="docs-agents.html" style="color: var(--color-primary);">Agent Docs</a></li>
+        <li><a href="docs-owners.html">Owner Docs</a></li>
+        <li><a href="login.html" class="btn btn-outline btn-sm">Owner Login</a></li>
+        <li><a href="register.html" class="btn btn-primary btn-sm">List Your Restaurant</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container docs-container">
+    <div id="docs-loading" class="docs-loading">
+      <div class="spinner" style="margin: 0 auto var(--space-md);"></div>
+      <p>Loading documentation...</p>
+    </div>
+    <article id="docs-content" class="docs-content" style="display:none;"></article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span>© 2026 AgentEats.</span>
+        <ul class="footer-links">
+          <li><a href="docs-agents.html">Agent Docs</a></li>
+          <li><a href="docs-owners.html">Owner Docs</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="js/docs.js"></script>
+  <script>loadDocs('docs/agents.md');</script>
+</body>
+</html>
