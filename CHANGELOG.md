@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/muskeg/AgentEats/compare/v0.2.3...v0.3.0) (2026-02-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* removing the open source mentions, preparing for going private ([#24](https://github.com/muskeg/AgentEats/issues/24))
+
+### Features
+
+* removing the open source mentions, preparing for going private ([#24](https://github.com/muskeg/AgentEats/issues/24)) ([353c843](https://github.com/muskeg/AgentEats/commit/353c8432c4ab9773b634a2f7ba630b4ac839cc50))
+
 ## [0.2.3](https://github.com/muskeg/AgentEats/compare/v0.2.2...v0.2.3) (2026-02-21)
 
 
