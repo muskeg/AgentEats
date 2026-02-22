@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/muskeg/AgentEats/compare/v0.3.0...v0.3.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* fix the anchor links in the docs ([#26](https://github.com/muskeg/AgentEats/issues/26)) ([f73f045](https://github.com/muskeg/AgentEats/commit/f73f04586841d1e571a0213d83029a1420d93537))
+
 ## [0.3.0](https://github.com/muskeg/AgentEats/compare/v0.2.3...v0.3.0) (2026-02-22)
 
 
